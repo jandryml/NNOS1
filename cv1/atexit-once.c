@@ -64,12 +64,12 @@ void deallocate_resource_2(void)
 // this will be executed upon process exit, the function shall be registered by atexit(3)
 void finish()
 {
-    // dealocation of resource 1, only if it is not NULL
+    // deallocation of resource 1, only if it is not NULL
     if(buf1 != NULL){
         deallocate_resource_1();
     }
 
-    // dealocation of resource 2, only if it is not NULL
+    // deallocation of resource 2, only if it is not NULL
     if(buf2 != NULL){
         deallocate_resource_2();
     }
