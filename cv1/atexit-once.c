@@ -64,6 +64,16 @@ void deallocate_resource_2(void)
 // this will be executed upon process exit, the function shall be registered by atexit(3)
 void finish()
 {
+    // dealocation of resource 1, only if it is not NULL
+    if(buf1 != NULL){
+        deallocate_resource_1();
+    }
+
+    // dealocation of resource 2, only if it is not NULL
+    if(buf2 != NULL){
+        deallocate_resource_2();
+    }
+
     printf("Finished.\n");
     // it is not portable to call the exit(3) in a function registered by atexit(3)
     // exit(0);
@@ -81,8 +91,6 @@ int main(int argc, char *argv[])
         printf("Calling exit().\n");
         exit(EXIT_FAILURE);
     }
-    // resource 1 allocated
-    atexit(deallocate_resource_1);	// register deallocation of the resource 1
 
     if (argc > 1)
         // set the size from the first argument if it was given
@@ -94,8 +102,6 @@ int main(int argc, char *argv[])
         // no need to deallocate resource 1 before calling exit(3)
         exit(EXIT_FAILURE);
     }
-    // resource 2 allocated
-    atexit(deallocate_resource_2);	// register deallocation of the resource 2
 
     printf("Working with resources.\n");	// do some work with resources
     sleep(2);
