@@ -11,27 +11,33 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <semaphore.h>		// POSIX semaphores
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
 #define ITERATIONS 1000000	// the number of operations
 
 volatile int count = 0;		// shared variable
 
 time_t start_time;
-
-// declare a semaphore
-sem_t semaphore;
 bool sem_initialized = false;
+
+typedef union {
+    int val;
+    struct semid_ds *buf;
+    unsigned short *array;
+} semunion_t;
+
+int sID;
+semunion_t sdata;
 
 // release all allocated resources, used in atexit(3)
 void release_resources(void)
-{       
+{
 	if (sem_initialized) {
-		sem_destroy(&semaphore);
-		// return value is not checked, possible errors that shall not happen:
-		//	EINVAL (not a valid semaphore)	-- semaphore is valid and initialized
-		//	EBUSY (semaphore is locked)	-- we never exit while the semaphore blocks
-		sem_initialized = false;
+        // IPC_RMID - immediately remove the semaphore set
+        semctl(sID, 0, IPC_RMID);
+        sem_initialized = false;
 	}
 }
 
@@ -41,21 +47,34 @@ static void sync_threads(void)
 {
 	while (time(NULL) == start_time) {
 		// do nothing except chew CPU slices for up to one second
-		// nedělá nic než spotřebovává procesorový čas zjišťováním času
 	}
 }
 
 void *ThreadAdd(void *arg)
 {
 	int i;
-	// register int reg;
 
 	sync_threads();		// synchronize threads start / synchronizace startu vláken
+    struct sembuf sops;
 
 	for (i = 0; i < ITERATIONS; ++i) {
 		// ENTRY SECTION
-		sem_wait(&semaphore);
-		// CRITICAL SECTION
+
+        // specifies semaphore index
+        sops.sem_num = 0;
+        // specify operation (wait)
+        sops.sem_op = -1;
+        // operation flags (if operation fails, undo operation)
+        sops.sem_flg = SEM_UNDO;
+
+        // semop - performs semaphore operations
+        // parameters:
+        // semid - specifies the ID of semaphore set
+        // sops - specifies the operation
+        // nsops - ??
+        // (wait)
+        semop(sID, &sops, 1);
+        // CRITICAL SECTION
 		// Compilation of "count++" is platform (CPU) dependent because
 		// the CPU can store the value into register, increase that register
 		// and store the result back into the memory variable.
@@ -66,8 +85,11 @@ void *ThreadAdd(void *arg)
 		// reg = reg + 1;	// increment the local copy
 		// count = reg;		// store the local value into the global count
 		// EXIT SECTION
-		sem_post(&semaphore);
-	}
+        // specify operation (post)
+        sops.sem_op = +1;
+        // (post)
+        semop(sID, &sops, 1);
+    }
 	return NULL;
 }
 
@@ -79,16 +101,32 @@ int main(int argc, char *argv[])
 
 	start_time = time(NULL);
 
-	// initialize the semaphore counter to one
+	// allocation of set of semaphores
 	// parameters:
-	//   pointer to the semaphore variable,
-	//   sharing type (0 = between threads, 1 = between processes)
-	//   semaphore counter value
-	if (sem_init(&semaphore, 0, 1)) {
-		perror("sem_init");
-		exit(EXIT_FAILURE);
+	//  key - returns semaphore set identifier according to key
+	//  nsems - count of semaphores
+	//  semflg - define the permissions
+    if ((sID = semget(IPC_PRIVATE, 1, IPC_CREAT|0666)) == -1) {
+        perror("semget: semget failed");
+        exit(EXIT_FAILURE);
 	}
-	sem_initialized = true;
+
+    // set value of semaphore's counter to 1
+    sdata.val = 1;
+
+    // semctl - performs the control operation
+    // parameters:
+    // semid - specifies the ID of semaphore set
+    // semnum - specifies index of semaphore
+    // cmd - the command executed
+    // ... - another parameters used as arguments for the command
+    // SETVAL - sets the semaphore value to 1
+    if(semctl(sID, 0, SETVAL, sdata) == -1) {
+        perror("semctl: semctl failed");
+        exit(EXIT_FAILURE);
+    }
+
+    sem_initialized = true;
 
 	// create two threads
 	if (pthread_create(&tid1, NULL, ThreadAdd, NULL)) {
