@@ -6,9 +6,20 @@ set(CMAKE_C_STANDARD 99)
 find_package (Threads)
 
 add_executable(cv1 cv1/atexit-once.c)
+
 add_executable(cv2 cv2/pthread_cleanup_sem.c)
+
+add_executable(cv3-1 cv3/bank_withdraw_SW1.c)
+add_executable(cv3-2 cv3/bank_withdraw_SW1_sched.c)
+#add_executable(cv3-3 cv3/bank_withdraw_xchg.c) - not working
+#add_executable(cv3-4 cv3/bank_withdraw_xchg_sched.c) - not working
 
 #add_executable(sysV examples/semaphore_system_v.c )
 
 
 target_link_libraries (cv2 ${CMAKE_THREAD_LIBS_INIT})
+
+target_link_libraries (cv3-1 ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries (cv3-2 ${CMAKE_THREAD_LIBS_INIT})
+#target_link_libraries (cv3-3 ${CMAKE_THREAD_LIBS_INIT})
+#target_link_libraries (cv3-4 ${CMAKE_THREAD_LIBS_INIT})
