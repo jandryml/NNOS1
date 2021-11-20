@@ -67,8 +67,8 @@ void *thread_func(void *unused)
 		perror("malloc");
 		return NULL;
 	}
-	// free buffer upon cancelling/exiting:
-	pthread_cleanup_push(release_buffer_tmp, &buf);
+    // pushes clean-up routine to the top of the stack of clean-up handlers
+    pthread_cleanup_push(release_buffer_tmp, &buf);
 	
 	printf("Temporary buffer allocated.\n");
 
@@ -77,8 +77,8 @@ void *thread_func(void *unused)
 	fgets(buf, BUF_SIZE, stdin);			// read input
 	name = strdup(buf); 		// allocate memory for entered name
 	printf("Name buffer allocated.\n");
-	// execute cleanup function
-	pthread_cleanup_pop(true);
+    // pop clean-up routine from the top of the stack of clean-up handlers and execute it
+    pthread_cleanup_pop(true);
 	sem_post(&thread_finished);	// notify about finishing
 	return NULL;
 }
