@@ -31,7 +31,7 @@ char *name = NULL;		// buffer for name storage
 // free a buffer (passed as the address of the pointer to buffer), store NULL to it and print optional message
 void release_buffer(char **buf, char *msg)
 {
-	// dealocate buffer only if it was allocated
+    // deallocation of buffer, only if it was allocated
 	if (buf && *buf != NULL) {
 		free(*buf);
 		*buf = NULL;
@@ -67,17 +67,18 @@ void *thread_func(void *unused)
 		perror("malloc");
 		return NULL;
 	}
-    // pushes clean-up routine to the top of the stack of clean-up handlers
+    // push clean-up routine 'release_buffer_tmp' to cleanup stack
+    // &buf will be used as argument for the clean-up routine
     pthread_cleanup_push(release_buffer_tmp, &buf);
 	
 	printf("Temporary buffer allocated.\n");
 
 	printf("Enter your name (timeout %d s): ", TIMEOUT);	// ask for input
-	// using fgets which is protected againts buffer overflow by specifying the size of input
+            // using fgets to read from stdin and save it to buf, it is protected againts buffer overflow by truncating input length to BUF_SIZE
 	fgets(buf, BUF_SIZE, stdin);			// read input
 	name = strdup(buf); 		// allocate memory for entered name
 	printf("Name buffer allocated.\n");
-    // pop clean-up routine from the top of the stack of clean-up handlers and execute it
+    // pop routine from cleanup stack and execute it
     pthread_cleanup_pop(true);
 	sem_post(&thread_finished);	// notify about finishing
 	return NULL;
