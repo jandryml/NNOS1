@@ -24,7 +24,6 @@ int test_and_set(volatile bool *locked)
 	register bool ret = true;		// value to be stored to *locked
 
 	asm volatile (
-		".intel_syntax noprefix"
 		"xchg %0, %1"
 		: "=r" (ret)			// output is previous value of *locked, stored to ret
 		: "m" (*locked), "0" (ret)	// input is *locked and ret
