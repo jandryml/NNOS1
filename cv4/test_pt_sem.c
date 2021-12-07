@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <unistd.h>		// getopt
 
-#define THREADS		3
-#define THREADS_IN_CS	1
+#define THREADS		8
+#define THREADS_IN_CS	3
 
 // print binary
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
